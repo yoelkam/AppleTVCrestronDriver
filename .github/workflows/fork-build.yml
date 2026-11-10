@@ -1,0 +1,133 @@
+name: Build Packages (fork)
+
+# Builds both installable Crestron Home .pkg files (Video Server + Extension) and
+# attaches them to the run as a downloadable artifact. No NuGet publishing, no
+# GitHub Release, no processor/hardware validation - those stay in the upstream
+# release workflows. Uses the same pinned toolchain as release-package.yml.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master, 'feature/**' ]
+    paths-ignore: [ '**.md' ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fork-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      MANIFESTUTIL_VERSION: 27.0.24
+      OFFICE_CORE_VERSION: 12.0.0
+      WORD_INTEROP_VERSION: 15.0.4797.1004
+      NET472_REFERENCE_ASSEMBLIES: C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2
+      NETFX_RUNTIME_DIR: C:\Windows\Microsoft.NET\Framework64\v4.0.30319
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Check out AppleTVControlLibrary (pinned)
+        shell: pwsh
+        run: |
+          $libraryPath = "$(Split-Path $env:GITHUB_WORKSPACE -Parent)\AppleTVControlLibrary"
+          git clone --depth 1 --branch v2.2.7 https://github.com/oznetmaster/AppleTVControlLibrary.git $libraryPath
+          if ($LASTEXITCODE -ne 0) { throw 'Failed to check out the pinned library tooling.' }
+          if ((git -C $libraryPath rev-parse HEAD).Trim() -ne 'b3e82737cc7bccc7f5bf10c7043140a4f9f3d112') {
+            throw 'Unexpected AppleTVControlLibrary tooling revision.'
+          }
+
+      - name: Set up .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.401
+
+      - name: Set up NuGet
+        uses: NuGet/setup-nuget@v2
+
+      - name: Install ILRepack tool
+        shell: pwsh
+        run: |
+          dotnet tool install --global dotnet-ilrepack --version 2.0.45
+          "$env:USERPROFILE\.dotnet\tools" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+
+      - name: Install ManifestUtil and Office interop packages
+        shell: pwsh
+        run: |
+          nuget install Crestron.DeviceDrivers.ManifestUtil -Version $env:MANIFESTUTIL_VERSION -OutputDirectory "$env:RUNNER_TEMP\nuget-tools"
+          nuget install Microsoft.Office.Interop.Word -Version $env:WORD_INTEROP_VERSION -OutputDirectory "$env:RUNNER_TEMP\nuget-tools"
+          nuget install Microsoft.Office.Core -Version $env:OFFICE_CORE_VERSION -OutputDirectory "$env:RUNNER_TEMP\nuget-tools"
+
+      - name: Resolve ManifestUtil path
+        id: manifestutil
+        shell: pwsh
+        run: |
+          $toolRoot = Join-Path $env:RUNNER_TEMP "nuget-tools\Crestron.DeviceDrivers.ManifestUtil.$env:MANIFESTUTIL_VERSION"
+          $manifestUtil = Get-ChildItem -Path $toolRoot -Filter ManifestUtil.exe -Recurse | Select-Object -First 1
+          if ($null -eq $manifestUtil) { throw "ManifestUtil.exe was not found under $toolRoot" }
+
+          $wordInterop = Get-ChildItem -Path (Join-Path $env:RUNNER_TEMP "nuget-tools\Microsoft.Office.Interop.Word.$env:WORD_INTEROP_VERSION") -Filter Microsoft.Office.Interop.Word.dll -Recurse | Select-Object -First 1
+          $officeCore = Get-ChildItem -Path (Join-Path $env:RUNNER_TEMP "nuget-tools\Microsoft.Office.Core.$env:OFFICE_CORE_VERSION") -Filter office.dll -Recurse | Select-Object -First 1
+          if ($null -eq $wordInterop -or $null -eq $officeCore) { throw 'Office interop assemblies were not found.' }
+          Copy-Item $wordInterop.FullName (Join-Path $manifestUtil.Directory.FullName 'Microsoft.Office.Interop.Word.dll') -Force
+          Copy-Item $officeCore.FullName (Join-Path $manifestUtil.Directory.FullName 'office.dll') -Force
+
+          $manifestUtilConfig = @'
+          <?xml version="1.0" encoding="utf-8"?>
+          <configuration>
+            <runtime>
+              <assemblyBinding xmlns="urn:schemas-microsoft-com:asm.v1">
+                <dependentAssembly>
+                  <assemblyIdentity name="office" publicKeyToken="71e9bce111e9429c" culture="neutral" />
+                  <bindingRedirect oldVersion="0.0.0.0-15.0.0.0" newVersion="12.0.0.0" />
+                </dependentAssembly>
+              </assemblyBinding>
+            </runtime>
+          </configuration>
+          '@
+          Set-Content -Path (Join-Path $manifestUtil.Directory.FullName 'ManifestUtil.exe.config') -Value $manifestUtilConfig -Encoding UTF8
+          "exe_path=$($manifestUtil.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
+      - name: Restore dependencies
+        run: dotnet restore AppleTVCrestronDriver/AppleTVCrestronDriver.csproj
+
+      - name: Determine driver version
+        id: package_version
+        shell: pwsh
+        run: |
+          $selected = & ./tools/Get-DriverReleaseVersion.ps1 -ManifestPath @('./AppleTVCrestronDriver/AppleTVCrestronDriver.json', './AppleTVCrestronExtensionDriver/AppleTVCrestronExtensionDriver.json') -Tag $env:GITHUB_REF_NAME -RequireTag:$false
+          "value=$($selected.PackageVersion)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          "driver=$($selected.DriverReleaseVersion)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
+      - name: Build both driver packages
+        shell: pwsh
+        run: |
+          # Build the two driver projects directly (not the .slnx) - see release-package.yml for why.
+          foreach ($proj in 'AppleTVCrestronDriver/AppleTVCrestronDriver.csproj', 'AppleTVCrestronExtensionDriver/AppleTVCrestronExtensionDriver.csproj') {
+            dotnet build $proj -c Release -p:ManifestUtilExe="${{ steps.manifestutil.outputs.exe_path }}" -p:LocalNet472ReferenceAssemblies="$env:NET472_REFERENCE_ASSEMBLIES" -p:LocalNetFxRuntimeDir="$env:NETFX_RUNTIME_DIR" -p:MergeDependenciesContinueOnError=false -p:PackageDriverContinueOnError=false -p:PackageDriverIgnoreExitCode=false -p:DriverReleaseVersion="${{ steps.package_version.outputs.driver }}"
+            if ($LASTEXITCODE -ne 0) { throw "Build failed: $proj" }
+          }
+
+      - name: Collect packages and checksums
+        shell: pwsh
+        run: |
+          $out = Join-Path $env:RUNNER_TEMP 'packages'
+          New-Item -ItemType Directory -Force -Path $out | Out-Null
+          Copy-Item "$env:GITHUB_WORKSPACE\AppleTVCrestronDriver\bin\Release\net472\AppleTVCrestronCloudDriver.pkg" $out -ErrorAction Stop
+          Copy-Item "$env:GITHUB_WORKSPACE\AppleTVCrestronExtensionDriver\bin\Release\net472\AppleTVCrestronExtensionDriver.pkg" $out -ErrorAction Stop
+          Get-ChildItem $out -Filter *.pkg | ForEach-Object {
+            "$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower())  $($_.Name)"
+          } | Set-Content (Join-Path $out 'SHA256SUMS.txt')
+          Get-Content (Join-Path $out 'SHA256SUMS.txt')
+          "PACKAGES_DIR=$out" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: AppleTV-Crestron-pkg-${{ steps.package_version.outputs.value }}-${{ github.run_number }}
+          path: ${{ env.PACKAGES_DIR }}
+          if-no-files-found: error
