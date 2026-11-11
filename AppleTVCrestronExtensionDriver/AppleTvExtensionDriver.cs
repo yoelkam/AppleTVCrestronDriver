@@ -103,6 +103,7 @@ public sealed partial class AppleTvExtensionDriver : ReflectedAttributeDriverEnt
 		SelectedApp = string.Empty;
 		SelectedAppName = string.Empty;
 		ApplyAppList ([]);
+		InitializeFavorites ();
 
 		TryPublishUiDefinition ();
 
@@ -147,7 +148,12 @@ public sealed partial class AppleTvExtensionDriver : ReflectedAttributeDriverEnt
 			_appleTvName = string.Empty;
 			_lastUniqueId = string.Empty;
 			DeviceLabel = "Apple TV Remote";
+			lock (_stateLock)
+				{
+				_customFavorites = null;
+				}
 			ApplyAppList ([]);
+			RefreshFavorites ();
 			SelectedApp = string.Empty;
 			SelectedAppName = string.Empty;
 			KeyboardFocused = false;
@@ -181,6 +187,7 @@ public sealed partial class AppleTvExtensionDriver : ReflectedAttributeDriverEnt
 
 		_appleTvName = appleTvName;
 		DeviceLabel = appleTvName;
+		LoadFavoritesFor (device.UniqueId);
 		SetStatusSummary ("Connecting...");
 		StartConnecting (device.UniqueId);
 		return null;
@@ -405,6 +412,7 @@ public sealed partial class AppleTvExtensionDriver : ReflectedAttributeDriverEnt
 
 			case AppleTvExtensionDriverLogic.BridgeLineKind.Power:
 				PowerIsOn = result.BoolValue;
+				UpdateTile ();
 				return;
 
 			case AppleTvExtensionDriverLogic.BridgeLineKind.SystemStatus:
@@ -483,6 +491,7 @@ public sealed partial class AppleTvExtensionDriver : ReflectedAttributeDriverEnt
 		// SetAndNotify), so assigning them here is sufficient - no separate explicit
 		// NotifyPropertyChanged calls are needed.
 		AppList = items;
+		RefreshFavorites ();
 		(bool shouldChange, string bundleIdToSelect, string nameToSelect) = AppleTvExtensionDriverLogic.DetermineSelection (apps, SelectedApp);
 		if (shouldChange)
 			{
@@ -569,7 +578,22 @@ public sealed partial class AppleTvExtensionDriver : ReflectedAttributeDriverEnt
 	private void SetStatusSummary (string statusSummary)
 		{
 		StatusSummary = statusSummary;
-		TileDisplay = statusSummary;
+		UpdateTile ();
+		}
+
+	// Room tile: TV on/off icon and "On"/"Off" once connected; otherwise the connection status
+	// (e.g. "Connecting...") with the generic remote icon.
+	private void UpdateTile ()
+		{
+		if (!OnlineIndicatorIsOnline)
+			{
+			TileIcon = "icRemoteRegular";
+			TileDisplay = StatusSummary;
+			return;
+			}
+
+		TileIcon = PowerIsOn ? "icTvOn" : "icTvOff";
+		TileDisplay = PowerIsOn ? "On" : "Off";
 		}
 
 	private void TryPublishUiDefinition ()

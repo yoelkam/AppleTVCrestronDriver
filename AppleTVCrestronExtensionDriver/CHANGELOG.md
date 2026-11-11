@@ -10,6 +10,15 @@ Both packages are released together from this repository under the same version 
 
 This changelog records shipped features, fixes, compatibility and runtime dependency changes. See [shared development and validation history](../DEVELOPMENT-HISTORY.md) for tests, CI, build tooling and work not yet released.
 
+## 1.6.0 (yoelkam fork) - 2026-11-10
+
+- Redesigned main page: Back/Home, d-pad and Play/Pause at the top; a favorites grid of up to 12 one-tap app buttons (3 per row) below; then All apps and Edit favorites.
+- Favorites fill automatically from popular installed apps (Netflix, YouTube, Disney+, TV, Prime Video, Max, ...) until customized.
+- New Edit favorites page: pick the app for each spot (picking an app already used swaps the two), or reset to popular apps. Custom favorites are saved per Apple TV and survive reboots.
+- Each favorite shows a category icon from the Crestron Home icon library (video, live TV, music, games, ...).
+- Room tile shows a TV on/off icon and On/Off once connected.
+- Removed the power toggle, transport row and volume row from the page to keep it uncluttered.
+
 ## [1.5.0](https://github.com/oznetmaster/AppleTVCrestronDriver/releases/tag/v1.5.0) - 2026-11-07
 
 - Expose a separate parameterless Launch command for each installed app, with stable bundle-based IDs and refreshed labels/availability.
