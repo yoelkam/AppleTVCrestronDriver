@@ -35,6 +35,40 @@ jobs:
         shell: pwsh
         run: ./tools/Test-ExtensionUi.ps1
 
+      - name: Set up .NET SDK (early, for favorites tests)
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.401
+
+      - name: Unit test favorites logic (standalone)
+        shell: pwsh
+        run: |
+          # The upstream test suite needs a maintainer-only SDK secret, so on this fork the
+          # dependency-free favorites logic is compiled and tested on its own.
+          $dir = Join-Path $env:RUNNER_TEMP 'favorites-tests'
+          New-Item -ItemType Directory -Force -Path $dir | Out-Null
+          @"
+          <Project Sdk="Microsoft.NET.Sdk">
+            <PropertyGroup>
+              <TargetFramework>net8.0</TargetFramework>
+              <LangVersion>latest</LangVersion>
+              <Nullable>disable</Nullable>
+              <IsPackable>false</IsPackable>
+            </PropertyGroup>
+            <ItemGroup>
+              <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
+              <PackageReference Include="NUnit3TestAdapter" Version="6.3.0" />
+              <PackageReference Include="NUnit" Version="5.0.0" />
+            </ItemGroup>
+            <ItemGroup>
+              <Compile Include="$env:GITHUB_WORKSPACE\AppleTVCrestronExtensionDriver\AppleTvFavorites.cs" />
+              <Compile Include="$env:GITHUB_WORKSPACE\AppleTVCrestronDriver.Tests\AppleTvFavoritesTests.cs" />
+            </ItemGroup>
+          </Project>
+          "@ | Set-Content (Join-Path $dir 'FavoritesTests.csproj') -Encoding UTF8
+          dotnet test (Join-Path $dir 'FavoritesTests.csproj') -c Release --logger "console;verbosity=normal"
+          if ($LASTEXITCODE -ne 0) { throw 'Favorites unit tests failed.' }
+
       - name: Check out AppleTVControlLibrary (pinned)
         shell: pwsh
         run: |
