@@ -31,6 +31,10 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Validate extension UI (Crestron XSD + Crestron AI Skill checks)
+        shell: pwsh
+        run: ./tools/Test-ExtensionUi.ps1
+
       - name: Check out AppleTVControlLibrary (pinned)
         shell: pwsh
         run: |
