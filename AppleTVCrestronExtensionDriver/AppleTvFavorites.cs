@@ -21,11 +21,11 @@ namespace AppleTV.CrestronDriver.Extension;
 /// </remarks>
 public static class AppleTvFavorites
 	{
-	/// <summary>Number of favorite buttons on the main page (4 rows of 3).</summary>
-	public const int SLOT_COUNT = 12;
+	/// <summary>Number of favorite buttons on the main page (2 rows of 2).</summary>
+	public const int SLOT_COUNT = 4;
 
 	/// <summary>Number of favorite buttons per grid row.</summary>
-	public const int SLOTS_PER_ROW = 3;
+	public const int SLOTS_PER_ROW = 2;
 
 	/// <summary>Sentinel used by the editor's "(Empty)" list item to clear a slot.</summary>
 	public const string EMPTY_SLOT_ID = "__empty__";
@@ -187,9 +187,6 @@ public static class AppleTvFavorites
 			return "icSettings";
 		if (ContainsAny (key, "search"))
 			return "icSearch";
-		if (ContainsAny (key, "youtube", "twitch", "vimeo"))
-			return "icPlayCircled";
-
 		return "icPlayingVideoRegular";
 		}
 

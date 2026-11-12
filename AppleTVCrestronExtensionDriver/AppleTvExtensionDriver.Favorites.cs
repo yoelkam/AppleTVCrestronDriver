@@ -141,230 +141,6 @@ public sealed partial class AppleTvExtensionDriver
 		get;
 		private set => SetAndNotify ("fav4EditLabel", value, ref field);
 		}
-	[EntityProperty (Id = "fav5Label", Type = DriverEntityValueType.String)]
-	[EntityPropertyMetadata (ExtensionUiProperty = true)]
-	public string Fav5Label
-		{
-		get;
-		private set => SetAndNotify ("fav5Label", value, ref field);
-		}
-	[EntityProperty (Id = "fav5Icon", Type = DriverEntityValueType.String)]
-	[EntityPropertyMetadata (ExtensionUiProperty = true)]
-	public string Fav5Icon
-		{
-		get;
-		private set => SetAndNotify ("fav5Icon", value, ref field);
-		}
-	[EntityProperty (Id = "fav5Visible")]
-	[EntityPropertyMetadata (ExtensionUiProperty = true)]
-	public bool Fav5Visible
-		{
-		get;
-		private set => SetAndNotify ("fav5Visible", value, ref field);
-		}
-	[EntityProperty (Id = "fav5EditLabel", Type = DriverEntityValueType.String)]
-	[EntityPropertyMetadata (ExtensionUiProperty = true)]
-	public string Fav5EditLabel
-		{
-		get;
-		private set => SetAndNotify ("fav5EditLabel", value, ref field);
-		}
-	[EntityProperty (Id = "fav6Label", Type = DriverEntityValueType.String)]
-	[EntityPropertyMetadata (ExtensionUiProperty = true)]
-	public string Fav6Label
-		{
-		get;
-		private set => SetAndNotify ("fav6Label", value, ref field);
-		}
-	[EntityProperty (Id = "fav6Icon", Type = DriverEntityValueType.String)]
-	[EntityPropertyMetadata (ExtensionUiProperty = true)]
-	public string Fav6Icon
-		{
-		get;
-		private set => SetAndNotify ("fav6Icon", value, ref field);
-		}
-	[EntityProperty (Id = "fav6Visible")]
-	[EntityPropertyMetadata (ExtensionUiProperty = true)]
-	public bool Fav6Visible
-		{
-		get;
-		private set => SetAndNotify ("fav6Visible", value, ref field);
-		}
-	[EntityProperty (Id = "fav6EditLabel", Type = DriverEntityValueType.String)]
-	[EntityPropertyMetadata (ExtensionUiProperty = true)]
-	public string Fav6EditLabel
-		{
-		get;
-		private set => SetAndNotify ("fav6EditLabel", value, ref field);
-		}
-	[EntityProperty (Id = "fav7Label", Type = DriverEntityValueType.String)]
-	[EntityPropertyMetadata (ExtensionUiProperty = true)]
-	public string Fav7Label
-		{
-		get;
-		private set => SetAndNotify ("fav7Label", value, ref field);
-		}
-	[EntityProperty (Id = "fav7Icon", Type = DriverEntityValueType.String)]
-	[EntityPropertyMetadata (ExtensionUiProperty = true)]
-	public string Fav7Icon
-		{
-		get;
-		private set => SetAndNotify ("fav7Icon", value, ref field);
-		}
-	[EntityProperty (Id = "fav7Visible")]
-	[EntityPropertyMetadata (ExtensionUiProperty = true)]
-	public bool Fav7Visible
-		{
-		get;
-		private set => SetAndNotify ("fav7Visible", value, ref field);
-		}
-	[EntityProperty (Id = "fav7EditLabel", Type = DriverEntityValueType.String)]
-	[EntityPropertyMetadata (ExtensionUiProperty = true)]
-	public string Fav7EditLabel
-		{
-		get;
-		private set => SetAndNotify ("fav7EditLabel", value, ref field);
-		}
-	[EntityProperty (Id = "fav8Label", Type = DriverEntityValueType.String)]
-	[EntityPropertyMetadata (ExtensionUiProperty = true)]
-	public string Fav8Label
-		{
-		get;
-		private set => SetAndNotify ("fav8Label", value, ref field);
-		}
-	[EntityProperty (Id = "fav8Icon", Type = DriverEntityValueType.String)]
-	[EntityPropertyMetadata (ExtensionUiProperty = true)]
-	public string Fav8Icon
-		{
-		get;
-		private set => SetAndNotify ("fav8Icon", value, ref field);
-		}
-	[EntityProperty (Id = "fav8Visible")]
-	[EntityPropertyMetadata (ExtensionUiProperty = true)]
-	public bool Fav8Visible
-		{
-		get;
-		private set => SetAndNotify ("fav8Visible", value, ref field);
-		}
-	[EntityProperty (Id = "fav8EditLabel", Type = DriverEntityValueType.String)]
-	[EntityPropertyMetadata (ExtensionUiProperty = true)]
-	public string Fav8EditLabel
-		{
-		get;
-		private set => SetAndNotify ("fav8EditLabel", value, ref field);
-		}
-	[EntityProperty (Id = "fav9Label", Type = DriverEntityValueType.String)]
-	[EntityPropertyMetadata (ExtensionUiProperty = true)]
-	public string Fav9Label
-		{
-		get;
-		private set => SetAndNotify ("fav9Label", value, ref field);
-		}
-	[EntityProperty (Id = "fav9Icon", Type = DriverEntityValueType.String)]
-	[EntityPropertyMetadata (ExtensionUiProperty = true)]
-	public string Fav9Icon
-		{
-		get;
-		private set => SetAndNotify ("fav9Icon", value, ref field);
-		}
-	[EntityProperty (Id = "fav9Visible")]
-	[EntityPropertyMetadata (ExtensionUiProperty = true)]
-	public bool Fav9Visible
-		{
-		get;
-		private set => SetAndNotify ("fav9Visible", value, ref field);
-		}
-	[EntityProperty (Id = "fav9EditLabel", Type = DriverEntityValueType.String)]
-	[EntityPropertyMetadata (ExtensionUiProperty = true)]
-	public string Fav9EditLabel
-		{
-		get;
-		private set => SetAndNotify ("fav9EditLabel", value, ref field);
-		}
-	[EntityProperty (Id = "fav10Label", Type = DriverEntityValueType.String)]
-	[EntityPropertyMetadata (ExtensionUiProperty = true)]
-	public string Fav10Label
-		{
-		get;
-		private set => SetAndNotify ("fav10Label", value, ref field);
-		}
-	[EntityProperty (Id = "fav10Icon", Type = DriverEntityValueType.String)]
-	[EntityPropertyMetadata (ExtensionUiProperty = true)]
-	public string Fav10Icon
-		{
-		get;
-		private set => SetAndNotify ("fav10Icon", value, ref field);
-		}
-	[EntityProperty (Id = "fav10Visible")]
-	[EntityPropertyMetadata (ExtensionUiProperty = true)]
-	public bool Fav10Visible
-		{
-		get;
-		private set => SetAndNotify ("fav10Visible", value, ref field);
-		}
-	[EntityProperty (Id = "fav10EditLabel", Type = DriverEntityValueType.String)]
-	[EntityPropertyMetadata (ExtensionUiProperty = true)]
-	public string Fav10EditLabel
-		{
-		get;
-		private set => SetAndNotify ("fav10EditLabel", value, ref field);
-		}
-	[EntityProperty (Id = "fav11Label", Type = DriverEntityValueType.String)]
-	[EntityPropertyMetadata (ExtensionUiProperty = true)]
-	public string Fav11Label
-		{
-		get;
-		private set => SetAndNotify ("fav11Label", value, ref field);
-		}
-	[EntityProperty (Id = "fav11Icon", Type = DriverEntityValueType.String)]
-	[EntityPropertyMetadata (ExtensionUiProperty = true)]
-	public string Fav11Icon
-		{
-		get;
-		private set => SetAndNotify ("fav11Icon", value, ref field);
-		}
-	[EntityProperty (Id = "fav11Visible")]
-	[EntityPropertyMetadata (ExtensionUiProperty = true)]
-	public bool Fav11Visible
-		{
-		get;
-		private set => SetAndNotify ("fav11Visible", value, ref field);
-		}
-	[EntityProperty (Id = "fav11EditLabel", Type = DriverEntityValueType.String)]
-	[EntityPropertyMetadata (ExtensionUiProperty = true)]
-	public string Fav11EditLabel
-		{
-		get;
-		private set => SetAndNotify ("fav11EditLabel", value, ref field);
-		}
-	[EntityProperty (Id = "fav12Label", Type = DriverEntityValueType.String)]
-	[EntityPropertyMetadata (ExtensionUiProperty = true)]
-	public string Fav12Label
-		{
-		get;
-		private set => SetAndNotify ("fav12Label", value, ref field);
-		}
-	[EntityProperty (Id = "fav12Icon", Type = DriverEntityValueType.String)]
-	[EntityPropertyMetadata (ExtensionUiProperty = true)]
-	public string Fav12Icon
-		{
-		get;
-		private set => SetAndNotify ("fav12Icon", value, ref field);
-		}
-	[EntityProperty (Id = "fav12Visible")]
-	[EntityPropertyMetadata (ExtensionUiProperty = true)]
-	public bool Fav12Visible
-		{
-		get;
-		private set => SetAndNotify ("fav12Visible", value, ref field);
-		}
-	[EntityProperty (Id = "fav12EditLabel", Type = DriverEntityValueType.String)]
-	[EntityPropertyMetadata (ExtensionUiProperty = true)]
-	public string Fav12EditLabel
-		{
-		get;
-		private set => SetAndNotify ("fav12EditLabel", value, ref field);
-		}
 	[EntityProperty (Id = "favRow1Visible")]
 	[EntityPropertyMetadata (ExtensionUiProperty = true)]
 	public bool FavRow1Visible
@@ -378,20 +154,6 @@ public sealed partial class AppleTvExtensionDriver
 		{
 		get;
 		private set => SetAndNotify ("favRow2Visible", value, ref field);
-		}
-	[EntityProperty (Id = "favRow3Visible")]
-	[EntityPropertyMetadata (ExtensionUiProperty = true)]
-	public bool FavRow3Visible
-		{
-		get;
-		private set => SetAndNotify ("favRow3Visible", value, ref field);
-		}
-	[EntityProperty (Id = "favRow4Visible")]
-	[EntityPropertyMetadata (ExtensionUiProperty = true)]
-	public bool FavRow4Visible
-		{
-		get;
-		private set => SetAndNotify ("favRow4Visible", value, ref field);
 		}
 
 	[EntityProperty (Id = "favoritesEmpty")]
@@ -451,63 +213,6 @@ public sealed partial class AppleTvExtensionDriver
 	/// <summary>Assigns an app (by bundle ID) to favorites slot 4 from the editor list.</summary>
 	[EntityCommand (Id = "assignFavorite4")]
 	public void AssignFavorite4 ([EntityParameter (Id = "value", Type = DriverEntityValueType.String)] string value) => AssignFavoriteSlot (3, value);
-	/// <summary>Launches the app in favorites slot 5.</summary>
-	[EntityCommand (Id = "launchFavorite5")]
-	public void LaunchFavorite5 () => LaunchFavoriteSlot (4);
-
-	/// <summary>Assigns an app (by bundle ID) to favorites slot 5 from the editor list.</summary>
-	[EntityCommand (Id = "assignFavorite5")]
-	public void AssignFavorite5 ([EntityParameter (Id = "value", Type = DriverEntityValueType.String)] string value) => AssignFavoriteSlot (4, value);
-	/// <summary>Launches the app in favorites slot 6.</summary>
-	[EntityCommand (Id = "launchFavorite6")]
-	public void LaunchFavorite6 () => LaunchFavoriteSlot (5);
-
-	/// <summary>Assigns an app (by bundle ID) to favorites slot 6 from the editor list.</summary>
-	[EntityCommand (Id = "assignFavorite6")]
-	public void AssignFavorite6 ([EntityParameter (Id = "value", Type = DriverEntityValueType.String)] string value) => AssignFavoriteSlot (5, value);
-	/// <summary>Launches the app in favorites slot 7.</summary>
-	[EntityCommand (Id = "launchFavorite7")]
-	public void LaunchFavorite7 () => LaunchFavoriteSlot (6);
-
-	/// <summary>Assigns an app (by bundle ID) to favorites slot 7 from the editor list.</summary>
-	[EntityCommand (Id = "assignFavorite7")]
-	public void AssignFavorite7 ([EntityParameter (Id = "value", Type = DriverEntityValueType.String)] string value) => AssignFavoriteSlot (6, value);
-	/// <summary>Launches the app in favorites slot 8.</summary>
-	[EntityCommand (Id = "launchFavorite8")]
-	public void LaunchFavorite8 () => LaunchFavoriteSlot (7);
-
-	/// <summary>Assigns an app (by bundle ID) to favorites slot 8 from the editor list.</summary>
-	[EntityCommand (Id = "assignFavorite8")]
-	public void AssignFavorite8 ([EntityParameter (Id = "value", Type = DriverEntityValueType.String)] string value) => AssignFavoriteSlot (7, value);
-	/// <summary>Launches the app in favorites slot 9.</summary>
-	[EntityCommand (Id = "launchFavorite9")]
-	public void LaunchFavorite9 () => LaunchFavoriteSlot (8);
-
-	/// <summary>Assigns an app (by bundle ID) to favorites slot 9 from the editor list.</summary>
-	[EntityCommand (Id = "assignFavorite9")]
-	public void AssignFavorite9 ([EntityParameter (Id = "value", Type = DriverEntityValueType.String)] string value) => AssignFavoriteSlot (8, value);
-	/// <summary>Launches the app in favorites slot 10.</summary>
-	[EntityCommand (Id = "launchFavorite10")]
-	public void LaunchFavorite10 () => LaunchFavoriteSlot (9);
-
-	/// <summary>Assigns an app (by bundle ID) to favorites slot 10 from the editor list.</summary>
-	[EntityCommand (Id = "assignFavorite10")]
-	public void AssignFavorite10 ([EntityParameter (Id = "value", Type = DriverEntityValueType.String)] string value) => AssignFavoriteSlot (9, value);
-	/// <summary>Launches the app in favorites slot 11.</summary>
-	[EntityCommand (Id = "launchFavorite11")]
-	public void LaunchFavorite11 () => LaunchFavoriteSlot (10);
-
-	/// <summary>Assigns an app (by bundle ID) to favorites slot 11 from the editor list.</summary>
-	[EntityCommand (Id = "assignFavorite11")]
-	public void AssignFavorite11 ([EntityParameter (Id = "value", Type = DriverEntityValueType.String)] string value) => AssignFavoriteSlot (10, value);
-	/// <summary>Launches the app in favorites slot 12.</summary>
-	[EntityCommand (Id = "launchFavorite12")]
-	public void LaunchFavorite12 () => LaunchFavoriteSlot (11);
-
-	/// <summary>Assigns an app (by bundle ID) to favorites slot 12 from the editor list.</summary>
-	[EntityCommand (Id = "assignFavorite12")]
-	public void AssignFavorite12 ([EntityParameter (Id = "value", Type = DriverEntityValueType.String)] string value) => AssignFavoriteSlot (11, value);
-
 	/// <summary>Discards custom favorites and returns to the automatic popular-apps selection.</summary>
 	[EntityCommand (Id = "resetFavorites")]
 	public void ResetFavorites ()
@@ -630,14 +335,6 @@ public sealed partial class AppleTvExtensionDriver
 			case 1: Fav2Label = label; Fav2Icon = icon; Fav2Visible = visible; Fav2EditLabel = editLabel; break;
 			case 2: Fav3Label = label; Fav3Icon = icon; Fav3Visible = visible; Fav3EditLabel = editLabel; break;
 			case 3: Fav4Label = label; Fav4Icon = icon; Fav4Visible = visible; Fav4EditLabel = editLabel; break;
-			case 4: Fav5Label = label; Fav5Icon = icon; Fav5Visible = visible; Fav5EditLabel = editLabel; break;
-			case 5: Fav6Label = label; Fav6Icon = icon; Fav6Visible = visible; Fav6EditLabel = editLabel; break;
-			case 6: Fav7Label = label; Fav7Icon = icon; Fav7Visible = visible; Fav7EditLabel = editLabel; break;
-			case 7: Fav8Label = label; Fav8Icon = icon; Fav8Visible = visible; Fav8EditLabel = editLabel; break;
-			case 8: Fav9Label = label; Fav9Icon = icon; Fav9Visible = visible; Fav9EditLabel = editLabel; break;
-			case 9: Fav10Label = label; Fav10Icon = icon; Fav10Visible = visible; Fav10EditLabel = editLabel; break;
-			case 10: Fav11Label = label; Fav11Icon = icon; Fav11Visible = visible; Fav11EditLabel = editLabel; break;
-			case 11: Fav12Label = label; Fav12Icon = icon; Fav12Visible = visible; Fav12EditLabel = editLabel; break;
 			}
 		}
 
@@ -647,8 +344,6 @@ public sealed partial class AppleTvExtensionDriver
 			{
 			case 0: FavRow1Visible = visible; break;
 			case 1: FavRow2Visible = visible; break;
-			case 2: FavRow3Visible = visible; break;
-			case 3: FavRow4Visible = visible; break;
 			}
 		}
 

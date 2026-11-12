@@ -37,9 +37,25 @@ public sealed class AppleTvFavoritesTests
 		Assert.AreEqual ("YouTube", slots[1].Name);
 		Assert.AreEqual ("com.regional.disney", slots[2].BundleId, "Disney+ should match by display name when the bundle ID differs.");
 		Assert.AreEqual ("Spotify", slots[3].Name);
-		Assert.AreEqual ("Alpha", slots[4].Name, "Remaining slots are topped up alphabetically.");
-		Assert.AreEqual ("Zeta", slots[5].Name);
-		Assert.IsNull (slots[6].BundleId, "System utilities such as Settings are not auto-added.");
+		}
+
+	[Test]
+	public void Resolve_Automatic_TopsUpAlphabeticallyWithoutSystemUtilities ()
+		{
+		List<(string BundleId, string Name)> installed =
+			[
+			("com.apple.TVSettings", "Settings"),
+			("com.example.zeta", "Zeta"),
+			("com.netflix.Netflix", "Netflix"),
+			("com.example.alpha", "Alpha"),
+			];
+
+		(string BundleId, string Name)[] slots = AppleTvFavorites.Resolve (installed, null);
+
+		Assert.AreEqual ("Netflix", slots[0].Name);
+		Assert.AreEqual ("Alpha", slots[1].Name);
+		Assert.AreEqual ("Zeta", slots[2].Name);
+		Assert.IsNull (slots[3].BundleId, "System utilities such as Settings are not auto-added.");
 		}
 
 	[Test]
@@ -57,14 +73,14 @@ public sealed class AppleTvFavoritesTests
 		string[] custom = new string[AppleTvFavorites.SLOT_COUNT];
 		custom[0] = "com.example.zeta";
 		custom[1] = "com.removed.app";
-		custom[4] = "com.netflix.Netflix";
+		custom[3] = "com.netflix.Netflix";
 
 		(string BundleId, string Name)[] slots = AppleTvFavorites.Resolve (Installed, custom);
 
 		Assert.AreEqual ("Zeta", slots[0].Name);
 		Assert.IsNull (slots[1].BundleId, "An uninstalled favorite leaves its slot empty instead of shifting the others.");
 		Assert.IsNull (slots[2].BundleId);
-		Assert.AreEqual ("Netflix", slots[4].Name);
+		Assert.AreEqual ("Netflix", slots[3].Name);
 		}
 
 	[Test]
@@ -108,7 +124,7 @@ public sealed class AppleTvFavoritesTests
 	[Test]
 	public void SerializeDeserialize_RoundTripsSlots ()
 		{
-		string[] slots = AppleTvFavorites.Assign (AppleTvFavorites.Assign (null, 0, "com.a"), 11, "com.b");
+		string[] slots = AppleTvFavorites.Assign (AppleTvFavorites.Assign (null, 0, "com.a"), 3, "com.b");
 
 		string[] restored = AppleTvFavorites.Deserialize (AppleTvFavorites.Serialize (slots));
 
@@ -124,7 +140,7 @@ public sealed class AppleTvFavoritesTests
 
 	[TestCase ("com.apple.TVWatchList", "TV", "icTvOn")]
 	[TestCase ("com.google.ios.youtubeunplugged", "YouTube TV", "icBroadcastRegular")]
-	[TestCase ("com.google.ios.youtube", "YouTube", "icPlayCircled")]
+	[TestCase ("com.google.ios.youtube", "YouTube", "icPlayingVideoRegular")]
 	[TestCase ("com.spotify.client", "Spotify", "icAudioOn")]
 	[TestCase ("com.apple.TVMusic", "Music", "icAudioOn")]
 	[TestCase ("com.netflix.Netflix", "Netflix", "icPlayingVideoRegular")]

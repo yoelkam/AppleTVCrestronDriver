@@ -19,22 +19,10 @@
 				<buttongroup visible="{favRow1Visible}">
 					<button id="Fav1Button" label="{fav1Label}" icon="{fav1Icon}" action="command:launchFavorite1" visible="{fav1Visible}" />
 					<button id="Fav2Button" label="{fav2Label}" icon="{fav2Icon}" action="command:launchFavorite2" visible="{fav2Visible}" />
-					<button id="Fav3Button" label="{fav3Label}" icon="{fav3Icon}" action="command:launchFavorite3" visible="{fav3Visible}" />
 				</buttongroup>
 				<buttongroup visible="{favRow2Visible}">
+					<button id="Fav3Button" label="{fav3Label}" icon="{fav3Icon}" action="command:launchFavorite3" visible="{fav3Visible}" />
 					<button id="Fav4Button" label="{fav4Label}" icon="{fav4Icon}" action="command:launchFavorite4" visible="{fav4Visible}" />
-					<button id="Fav5Button" label="{fav5Label}" icon="{fav5Icon}" action="command:launchFavorite5" visible="{fav5Visible}" />
-					<button id="Fav6Button" label="{fav6Label}" icon="{fav6Icon}" action="command:launchFavorite6" visible="{fav6Visible}" />
-				</buttongroup>
-				<buttongroup visible="{favRow3Visible}">
-					<button id="Fav7Button" label="{fav7Label}" icon="{fav7Icon}" action="command:launchFavorite7" visible="{fav7Visible}" />
-					<button id="Fav8Button" label="{fav8Label}" icon="{fav8Icon}" action="command:launchFavorite8" visible="{fav8Visible}" />
-					<button id="Fav9Button" label="{fav9Label}" icon="{fav9Icon}" action="command:launchFavorite9" visible="{fav9Visible}" />
-				</buttongroup>
-				<buttongroup visible="{favRow4Visible}">
-					<button id="Fav10Button" label="{fav10Label}" icon="{fav10Icon}" action="command:launchFavorite10" visible="{fav10Visible}" />
-					<button id="Fav11Button" label="{fav11Label}" icon="{fav11Icon}" action="command:launchFavorite11" visible="{fav11Visible}" />
-					<button id="Fav12Button" label="{fav12Label}" icon="{fav12Icon}" action="command:launchFavorite12" visible="{fav12Visible}" />
 				</buttongroup>
 				<listbutton id="AllAppsButton" label="^AllApps" source="{appList}" itemlabel="{.name}" action="command:setSelectedApp" actionparameters="{.bundleId}" />
 				<statusandnavigation id="EditFavoritesNav" label="^EditFavorites" status="{favoritesModeLabel}" navigation="show:FavoritesPage" />
@@ -47,14 +35,6 @@
 				<listbutton id="EditFav2" label="{fav2EditLabel}" source="{favoriteChoiceList}" itemlabel="{.name}" action="command:assignFavorite2" actionparameters="{.bundleId}" />
 				<listbutton id="EditFav3" label="{fav3EditLabel}" source="{favoriteChoiceList}" itemlabel="{.name}" action="command:assignFavorite3" actionparameters="{.bundleId}" />
 				<listbutton id="EditFav4" label="{fav4EditLabel}" source="{favoriteChoiceList}" itemlabel="{.name}" action="command:assignFavorite4" actionparameters="{.bundleId}" />
-				<listbutton id="EditFav5" label="{fav5EditLabel}" source="{favoriteChoiceList}" itemlabel="{.name}" action="command:assignFavorite5" actionparameters="{.bundleId}" />
-				<listbutton id="EditFav6" label="{fav6EditLabel}" source="{favoriteChoiceList}" itemlabel="{.name}" action="command:assignFavorite6" actionparameters="{.bundleId}" />
-				<listbutton id="EditFav7" label="{fav7EditLabel}" source="{favoriteChoiceList}" itemlabel="{.name}" action="command:assignFavorite7" actionparameters="{.bundleId}" />
-				<listbutton id="EditFav8" label="{fav8EditLabel}" source="{favoriteChoiceList}" itemlabel="{.name}" action="command:assignFavorite8" actionparameters="{.bundleId}" />
-				<listbutton id="EditFav9" label="{fav9EditLabel}" source="{favoriteChoiceList}" itemlabel="{.name}" action="command:assignFavorite9" actionparameters="{.bundleId}" />
-				<listbutton id="EditFav10" label="{fav10EditLabel}" source="{favoriteChoiceList}" itemlabel="{.name}" action="command:assignFavorite10" actionparameters="{.bundleId}" />
-				<listbutton id="EditFav11" label="{fav11EditLabel}" source="{favoriteChoiceList}" itemlabel="{.name}" action="command:assignFavorite11" actionparameters="{.bundleId}" />
-				<listbutton id="EditFav12" label="{fav12EditLabel}" source="{favoriteChoiceList}" itemlabel="{.name}" action="command:assignFavorite12" actionparameters="{.bundleId}" />
 				<button id="ResetFavoritesButton" label="^ResetFavorites" navigation="showalert:ResetFavoritesConfirm" />
 			</controls>
 		</layout>

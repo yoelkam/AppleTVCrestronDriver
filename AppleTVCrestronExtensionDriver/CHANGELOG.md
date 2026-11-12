@@ -10,6 +10,12 @@ Both packages are released together from this repository under the same version 
 
 This changelog records shipped features, fixes, compatibility and runtime dependency changes. See [shared development and validation history](../DEVELOPMENT-HISTORY.md) for tests, CI, build tooling and work not yet released.
 
+## 1.6.1 (yoelkam fork) - 2026-11-11
+
+- Favorites grid reduced to 2 rows of 2 buttons (4 favorites) so app names fit without truncation.
+- "Edit favorites" renamed "Favorites settings".
+- YouTube uses the standard video icon (the circled play icon squeezed its label on iPhone).
+
 ## 1.6.0 (yoelkam fork) - 2026-11-10
 
 - Redesigned main page: Back/Home, d-pad and Play/Pause at the top; a favorites grid of up to 12 one-tap app buttons (3 per row) below; then All apps and Edit favorites.
