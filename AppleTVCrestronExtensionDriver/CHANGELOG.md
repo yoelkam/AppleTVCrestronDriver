@@ -25,6 +25,10 @@ This changelog records shipped features, fixes, compatibility and runtime depend
 - Room tile shows a TV on/off icon and On/Off once connected.
 - Removed the power toggle, transport row and volume row from the page to keep it uncluttered.
 
+## [1.5.1](https://github.com/oznetmaster/AppleTVCrestronDriver/releases/tag/v1.5.1) - 2026-11-10
+
+- Release alongside Video Server 1.5.1, using AppleTVControlLibrary 2.2.8. Retain the existing bridge, pairing storage, app-launch commands and two-step Quick Actions.
+
 ## [1.5.0](https://github.com/oznetmaster/AppleTVCrestronDriver/releases/tag/v1.5.0) - 2026-11-07
 
 - Expose a separate parameterless Launch command for each installed app, with stable bundle-based IDs and refreshed labels/availability.
