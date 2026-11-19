@@ -11,6 +11,13 @@ under the same version tag.
 
 This changelog records shipped features, fixes, compatibility and runtime dependency changes. See [development and validation history](DEVELOPMENT-HISTORY.md) for tests, CI, build tooling and work not yet released.
 
+## 1.6.2 (yoelkam fork) - 2026-11-18
+
+- Fix: the Video Server stopped trying to reconnect about a minute after losing the Apple TV (5 attempts at 2/5/10/20/30 s), leaving that room's remote dead until a processor reboot or re-pair. It now keeps retrying every 60 seconds after the quick retries, until the Apple TV is back or the driver is reloaded.
+- Fix: a connection that died silently (no TCP reset, e.g. Apple TV power loss or network drop) stayed "connected". A health check every 60 s now reconnects when the Apple TV doesn't reply within 10 s. Any reply, including tvOS "No request handler" errors, counts as alive.
+- Fix: a command that never got a reply blocked every later command. Commands now time out after 10 s (queue wait 20 s) and trigger a reconnect.
+- Includes upstream 1.5.1 (AppleTVControlLibrary 2.2.8 and session lifecycle fixes).
+
 ## [1.5.1](https://github.com/oznetmaster/AppleTVCrestronDriver/releases/tag/v1.5.1) - 2026-11-10
 
 - Use AppleTVControlLibrary and Discovery 2.2.8.

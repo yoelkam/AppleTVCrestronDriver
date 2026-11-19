@@ -18,8 +18,8 @@ using Assert = NUnit.Framework.Legacy.ClassicAssert;
 namespace AppleTVCrestronDriver.Tests;
 
 /// <summary>
-/// Covers <see cref="AppleTvVideoServerLogic.HandleCompanionDisconnectedAsync"/>'s bounded backoff
-/// retry schedule off-box, including abandoning the schedule when a newer driver instance has taken
+/// Covers <see cref="AppleTvVideoServerLogic.HandleCompanionDisconnectedAsync"/>'s retry
+/// schedule (quick backoff, then every minute until reconnected) off-box, including abandoning the schedule when a newer driver instance has taken
 /// over and stopping as soon as reconnection succeeds.
 /// </summary>
 [TestFixture]
@@ -33,7 +33,7 @@ public sealed class AppleTvReconnectTests
 		}
 
 	[Test]
-	public async Task Reconnect_follows_the_bounded_backoff_schedule ()
+	public async Task Reconnect_uses_quick_retries_then_keeps_retrying_every_minute ()
 		{
 		var delays = new List<TimeSpan> ();
 		var host = new FakeDriverHost ();
@@ -46,12 +46,60 @@ public sealed class AppleTvReconnectTests
 				return Task.CompletedTask;
 			});
 
-		await logic.HandleCompanionDisconnectedAsync (protocol, _ => Task.CompletedTask);
+		// Unreachable for 7 attempts (well past the old ~67 s give-up point), back on the 8th.
+		int attempts = 0;
+		await logic.HandleCompanionDisconnectedAsync (protocol, p =>
+			{
+				if (++attempts == 8)
+					((FakeProtocol)p).IsConnected = true;
+				return Task.CompletedTask;
+			});
 
 		CollectionAssert.AreEqual (
-			new[] { 2, 5, 10, 20, 30 }.Select (seconds => TimeSpan.FromSeconds (seconds)).ToArray (),
+			new[] { 2, 5, 10, 20, 30, 60, 60, 60 }.Select (seconds => TimeSpan.FromSeconds (seconds)).ToArray (),
 			delays);
-		Assert.IsTrue (host.Log.Any (m => m.Contains ("Could not reconnect")));
+		Assert.IsTrue (host.Log.Any (m => m.Contains ("retrying every 60 seconds")));
+		Assert.IsTrue (host.Log.Any (m => m.Contains ("Reconnected successfully")));
+		Assert.IsFalse (host.Log.Any (m => m.Contains ("Could not reconnect")), "The driver must no longer give up.");
+		}
+
+	[Test]
+	public async Task Reconnect_stops_when_the_driver_is_disposed ()
+		{
+		var host = new FakeDriverHost ();
+		var protocol = new FakeProtocol { AppleTvName = "Lounge", IsConnected = false };
+		AppleTvPairingSessionState.Instance.CurrentProtocol = protocol;
+		using var stop = new System.Threading.CancellationTokenSource ();
+		int delays = 0;
+		var logic = new AppleTvVideoServerLogic (host, () => host, duration =>
+			{
+				if (++delays == 12)
+					stop.Cancel ();
+				return Task.CompletedTask;
+			});
+
+		await logic.HandleCompanionDisconnectedAsync (protocol, _ => Task.CompletedTask, stop.Token);
+
+		Assert.AreEqual (12, delays);
+		}
+
+	[Test]
+	public async Task Reconnect_ignores_a_second_report_while_already_reconnecting ()
+		{
+		var host = new FakeDriverHost ();
+		var protocol = new FakeProtocol { AppleTvName = "Lounge", IsConnected = false };
+		AppleTvPairingSessionState.Instance.CurrentProtocol = protocol;
+		var firstDelay = new TaskCompletionSource<bool> ();
+		var logic = new AppleTvVideoServerLogic (host, () => host, _ => firstDelay.Task);
+		int attempts = 0;
+
+		Task first = logic.HandleCompanionDisconnectedAsync (protocol, p => { attempts++; ((FakeProtocol)p).IsConnected = true; return Task.CompletedTask; });
+		await logic.HandleCompanionDisconnectedAsync (protocol, p => { attempts += 100; return Task.CompletedTask; });
+		firstDelay.SetResult (true);
+		await first;
+
+		Assert.AreEqual (1, attempts);
+		Assert.IsTrue (host.Log.Any (m => m.Contains ("Reconnect already in progress")));
 		}
 
 	[Test]

@@ -37,6 +37,16 @@ internal sealed class AppleTvVideoServerProtocol : AVideoServerProtocol, IAppleT
 	private readonly CancellationTokenSource _lifetimeCancellation = new ();
 	private bool _disposed;
 	private int _connectionVersion;
+
+	// Connection health (yoelkam fork 1.6.2). Companion Link has no keepalive, so a connection that
+	// dies silently (Apple TV power loss, network drop without a TCP reset) used to look "connected"
+	// forever while every command went nowhere. A periodic probe and a per-command timeout now turn
+	// that into a normal reconnect.
+	private static readonly TimeSpan HEALTH_CHECK_INTERVAL = TimeSpan.FromSeconds (60);
+	private static readonly TimeSpan HEALTH_CHECK_TIMEOUT = TimeSpan.FromSeconds (10);
+	private static readonly TimeSpan COMMAND_TIMEOUT = TimeSpan.FromSeconds (10);
+	private static readonly TimeSpan SEND_QUEUE_TIMEOUT = TimeSpan.FromSeconds (20);
+	private AppleTvCompanionSession _lostSession;
 	private readonly Dictionary<ArrowDirections, bool> _pressedArrowDirections = new ()
 		{
 		{ ArrowDirections.Up, false },
@@ -167,6 +177,8 @@ internal sealed class AppleTvVideoServerProtocol : AVideoServerProtocol, IAppleT
 			SetPowerState (session.IsPoweredOn);
 			}
 
+		_ = MonitorSessionHealthAsync (session);
+
 		// ConnectAsync's initial best-effort power snapshot does not raise
 		// SystemStatusChanged even when it successfully learns the state, so
 		// PowerIsOn would otherwise be left at its default until the next
@@ -260,13 +272,83 @@ internal sealed class AppleTvVideoServerProtocol : AVideoServerProtocol, IAppleT
 	// failure). Both cases warrant an automatic reconnect.
 	private void HandleSessionConnectionClosed (AppleTvCompanionSession session, Exception exception)
 		{
-		if (!ReferenceEquals (session, _session))
+		ReportConnectionLost (session, exception is null ? "the Apple TV closed the connection" : "connection fault: " + exception.Message);
+		}
+
+	// Single path for every kind of lost connection (closed, faulted, unresponsive). Raises
+	// CompanionDisconnected at most once per session so the closed event, the health check and a
+	// timed-out command can't start overlapping reconnect loops for the same failure.
+	private void ReportConnectionLost (AppleTvCompanionSession session, string reason)
+		{
+		lock (_sessionLock)
 			{
-			return;
+			if (_disposed || session is null || !ReferenceEquals (session, _session) || ReferenceEquals (session, _lostSession))
+				return;
+			_lostSession = session;
+			SetCompanionConnectionState (false);
 			}
 
+		LogDiagnostic ($"Apple TV connection lost ({reason}); reconnecting.");
 		CompanionDisconnected?.Invoke ();
 		}
+
+	// Probes the session every HEALTH_CHECK_INTERVAL. Any reply - including an error reply such as
+	// "No request handler" from some tvOS versions - proves the link is alive. Only no reply within
+	// HEALTH_CHECK_TIMEOUT, or a session the library reports as disconnected, counts as lost.
+	private async Task MonitorSessionHealthAsync (AppleTvCompanionSession session)
+		{
+		try
+			{
+			while (true)
+				{
+				await Task.Delay (HEALTH_CHECK_INTERVAL, _lifetimeCancellation.Token).ConfigureAwait (false);
+				lock (_sessionLock)
+					{
+					if (_disposed || !ReferenceEquals (session, _session) || ReferenceEquals (session, _lostSession))
+						return;
+					}
+
+				if (!session.IsConnected || session.Api is null)
+					{
+					ReportConnectionLost (session, "health check found the session closed");
+					return;
+					}
+
+				Task probe = session.Api.FetchAttentionStateAsync ();
+				Task finished = await Task.WhenAny (probe, Task.Delay (HEALTH_CHECK_TIMEOUT, _lifetimeCancellation.Token)).ConfigureAwait (false);
+				if (!ReferenceEquals (finished, probe))
+					{
+					ObserveLater (probe);
+					ReportConnectionLost (session, $"no reply to health check within {HEALTH_CHECK_TIMEOUT.TotalSeconds:0} s");
+					return;
+					}
+
+				if (probe.IsFaulted && IsTransportFailure (probe.Exception?.GetBaseException (), session))
+					{
+					ReportConnectionLost (session, "health check failed: " + probe.Exception?.GetBaseException ().Message);
+					return;
+					}
+				}
+			}
+		catch (OperationCanceledException)
+			{
+			}
+		catch (Exception exception)
+			{
+			LogDiagnostic ("Health check stopped: " + exception.Message);
+			}
+		}
+
+	private static bool IsTransportFailure (Exception exception, AppleTvCompanionSession session) =>
+		!session.IsConnected
+		|| exception is TimeoutException
+		|| exception is System.IO.IOException
+		|| exception is System.Net.Sockets.SocketException
+		|| exception is ObjectDisposedException;
+
+	// Keeps an abandoned (timed-out) task's eventual exception from going unobserved.
+	private void ObserveLater (Task task) =>
+		_ = task.ContinueWith (t => _ = t.Exception, CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
 
 	// Reflects the Apple TV's pushed power state (asleep vs. awake/screensaver/idle)
 	// into Crestron Home so the UI does not just show "on" the moment Companion
@@ -782,8 +864,14 @@ internal sealed class AppleTvVideoServerProtocol : AVideoServerProtocol, IAppleT
 			{
 			// Serialize all outbound commands so overlapping calls (e.g. a held arrow
 			// key firing faster than the round trip to the Apple TV) cannot interleave
-			// their down/up HID pairs on the wire.
-			await _sendGate.WaitAsync (_lifetimeCancellation.Token).ConfigureAwait (false);
+			// their down/up HID pairs on the wire. Bounded waits (yoelkam fork 1.6.2): a
+			// command that never gets a reply used to hold this gate forever, silently
+			// queueing every later command behind it ("remote does nothing").
+			if (!await _sendGate.WaitAsync (SEND_QUEUE_TIMEOUT, _lifetimeCancellation.Token).ConfigureAwait (false))
+				{
+				ReportConnectionLost (session, $"commands stuck in queue for {SEND_QUEUE_TIMEOUT.TotalSeconds:0} s");
+				return;
+				}
 			try
 				{
 				Task pending;
@@ -793,6 +881,13 @@ internal sealed class AppleTvVideoServerProtocol : AVideoServerProtocol, IAppleT
 						return;
 					pending = operation (session);
 					}
+				Task finished = await Task.WhenAny (pending, Task.Delay (COMMAND_TIMEOUT, _lifetimeCancellation.Token)).ConfigureAwait (false);
+				if (!ReferenceEquals (finished, pending))
+					{
+					ObserveLater (pending);
+					ReportConnectionLost (session, $"no reply to a command within {COMMAND_TIMEOUT.TotalSeconds:0} s");
+					return;
+					}
 				await pending.ConfigureAwait (false);
 				}
 			finally
@@ -800,9 +895,15 @@ internal sealed class AppleTvVideoServerProtocol : AVideoServerProtocol, IAppleT
 				_ = _sendGate.Release ();
 				}
 			}
+		catch (OperationCanceledException)
+			{
+			}
 		catch (Exception exception)
 			{
 			LogDiagnostic (exception.Message);
+			if (IsTransportFailure (exception, session))
+				ReportConnectionLost (session, "command failed: " + exception.Message);
 			}
 		}
+
 	}

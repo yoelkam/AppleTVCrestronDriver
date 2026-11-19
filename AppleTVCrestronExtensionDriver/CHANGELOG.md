@@ -10,6 +10,10 @@ Both packages are released together from this repository under the same version 
 
 This changelog records shipped features, fixes, compatibility and runtime dependency changes. See [shared development and validation history](../DEVELOPMENT-HISTORY.md) for tests, CI, build tooling and work not yet released.
 
+## 1.6.2 (yoelkam fork) - 2026-11-18
+
+- Released with Video Server 1.6.2 (reconnect and connection health fixes) and upstream 1.5.1. No extension UI changes.
+
 ## 1.6.1 (yoelkam fork) - 2026-11-11
 
 - Favorites grid reduced to 2 rows of 2 buttons (4 favorites) so app names fit without truncation.

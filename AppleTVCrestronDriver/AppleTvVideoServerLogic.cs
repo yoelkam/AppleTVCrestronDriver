@@ -34,6 +34,10 @@ internal sealed class AppleTvVideoServerLogic
 
 	private readonly ICredentialFileStore _credentialStore;
 
+	// Delay between reconnect attempts once the quick retries are used up (yoelkam fork 1.6.2).
+	internal static readonly TimeSpan STEADY_RECONNECT_DELAY = TimeSpan.FromSeconds (60);
+	private int _reconnectLoopActive;
+
 	/// <summary>
 	/// Creates the logic instance.
 	/// </summary>
@@ -164,11 +168,25 @@ internal sealed class AppleTvVideoServerLogic
 	//
 	// The retry scheduler takes a reconnect callback so the timing and stale-instance checks
 	// can be tested independently of the discovery and connection orchestration below.
-	internal async Task HandleCompanionDisconnectedAsync (IAppleTvProtocol protocol, Func<IAppleTvProtocol, Task> reconfigure)
+	internal async Task HandleCompanionDisconnectedAsync (IAppleTvProtocol protocol, Func<IAppleTvProtocol, Task> reconfigure, CancellationToken stopToken = default)
 		{
+		// One reconnect loop at a time per driver instance: a closed event, a failed health check and
+		// a timed-out command can all report the same outage.
+		if (Interlocked.Exchange (ref _reconnectLoopActive, 1) == 1)
+			{
+			LogDiagnostic ("Reconnect already in progress.");
+			return;
+			}
+
 		try
 			{
 			LogDiagnostic ("Companion Link session disconnected unexpectedly; attempting to reconnect.");
+
+			// Quick retries for short blips, then (yoelkam fork 1.6.2) keep retrying every
+			// STEADY_RECONNECT_DELAY for as long as it takes. The original schedule gave up after
+			// ~67 s, so an Apple TV that rebooted for a tvOS update, or a network outage longer
+			// than a minute, left the room's remote dead until the processor was rebooted or the
+			// device was re-paired.
 			TimeSpan[] retryDelays =
 				[
 				TimeSpan.FromSeconds (2),
@@ -178,7 +196,7 @@ internal sealed class AppleTvVideoServerLogic
 				TimeSpan.FromSeconds (30),
 				];
 
-			for (int attempt = 1; attempt <= retryDelays.Length; attempt++)
+			for (int attempt = 1; !stopToken.IsCancellationRequested; attempt++)
 				{
 				// A newer driver instance may have since taken over (e.g. the
 				// user edited configuration during the outage); stop retrying
@@ -189,7 +207,11 @@ internal sealed class AppleTvVideoServerLogic
 					return;
 					}
 
-				await _delay (retryDelays[attempt - 1]).ConfigureAwait (false);
+				bool quickPhase = attempt <= retryDelays.Length;
+				await _delay (quickPhase ? retryDelays[attempt - 1] : STEADY_RECONNECT_DELAY).ConfigureAwait (false);
+
+				if (stopToken.IsCancellationRequested)
+					return;
 
 				if (!ReferenceEquals (AppleTvPairingSessionState.Instance.CurrentProtocol, protocol))
 					{
@@ -197,28 +219,39 @@ internal sealed class AppleTvVideoServerLogic
 					return;
 					}
 
+				// Log every quick attempt, then every 10th so a long outage doesn't flood the log.
+				bool logThisAttempt = quickPhase || attempt % 10 == 0;
 				try
 					{
-					LogDiagnostic ($"Reconnect attempt {attempt} of {retryDelays.Length}.");
+					if (logThisAttempt)
+						LogDiagnostic ($"Reconnect attempt {attempt}.");
 					await reconfigure (protocol).ConfigureAwait (false);
 					if (protocol.IsConnected)
 						{
-						LogDiagnostic ("Reconnected successfully.");
+						LogDiagnostic ($"Reconnected successfully (attempt {attempt}).");
 						return;
 						}
 					}
 				catch (Exception exception)
 					{
-					LogDiagnostic ($"Reconnect attempt {attempt} failed.");
-					LogException (exception);
+					if (logThisAttempt)
+						{
+						LogDiagnostic ($"Reconnect attempt {attempt} failed.");
+						LogException (exception);
+						}
 					}
-				}
 
-			LogDiagnostic ("Could not reconnect to the Apple TV after repeated attempts; reload the driver to retry manually.");
+				if (attempt == retryDelays.Length)
+					LogDiagnostic ($"Apple TV still unreachable; retrying every {STEADY_RECONNECT_DELAY.TotalSeconds:0} seconds until it is back.");
+				}
 			}
 		catch (Exception exception)
 			{
 			LogException (exception);
+			}
+		finally
+			{
+			_ = Interlocked.Exchange (ref _reconnectLoopActive, 0);
 			}
 		}
 

@@ -19,6 +19,7 @@ public sealed class AppleTvVideoServer : ABasicVideoServer, ICloudConnected, ISe
 	private AppleTvNoOpTransport _transport;
 	private AppleTvBridgeServerHandlerRegistration _bridgeHandlerRegistration;
 	private readonly object _bridgeLock = new ();
+	private readonly CancellationTokenSource _reconnectStop = new ();
 	private AppleTvBridgeServer _bridgeServer;
 	private AppleTvVideoServerProtocol _bridgeProtocol;
 	private bool _disposed;
@@ -178,6 +179,9 @@ public sealed class AppleTvVideoServer : ABasicVideoServer, ICloudConnected, ISe
 		// keep being routed to this now-disposed protocol - whose Companion
 		// Link session is gone - instead of failing loudly or waiting for the
 		// next instance to install its own handler.
+		// Stop this instance's endless reconnect loop (yoelkam fork 1.6.2).
+		_reconnectStop.Cancel ();
+
 		lock (_bridgeLock)
 			{
 			_disposed = true;
@@ -305,7 +309,8 @@ public sealed class AppleTvVideoServer : ABasicVideoServer, ICloudConnected, ISe
 	private async Task HandleCompanionDisconnectedAsync (IAppleTvProtocol protocol)
 		=> await _logic.HandleCompanionDisconnectedAsync (
 			protocol,
-			p => ConfigureAppleTvAsync (p, p.AppleTvName)).ConfigureAwait (false);
+			p => ConfigureAppleTvAsync (p, p.AppleTvName),
+			_reconnectStop.Token).ConfigureAwait (false);
 
 	private async Task ConfigureAppleTvAsync (IAppleTvProtocol protocol, string appleTvName)
 		=> await _logic.ConfigureAppleTvAsync (
