@@ -36,6 +36,9 @@ internal sealed class AppleTvVideoServerLogic
 
 	// Delay between reconnect attempts once the quick retries are used up (yoelkam fork 1.6.2).
 	internal static readonly TimeSpan STEADY_RECONNECT_DELAY = TimeSpan.FromSeconds (60);
+
+	// Upper bound on one reconnect attempt (1.6.3); the connect itself times out at 30 s.
+	internal static readonly TimeSpan RECONNECT_ATTEMPT_WATCHDOG = TimeSpan.FromSeconds (90);
 	private int _reconnectLoopActive;
 
 	/// <summary>
@@ -225,7 +228,18 @@ internal sealed class AppleTvVideoServerLogic
 					{
 					if (logThisAttempt)
 						LogDiagnostic ($"Reconnect attempt {attempt}.");
-					await reconfigure (protocol).ConfigureAwait (false);
+					// Watchdog (1.6.3): an attempt that never completes (e.g. discovery or a connect
+					// that ignores its own timeout) must not wedge this loop - and, through the
+					// single-loop guard, every future reconnect - forever.
+					Task attemptTask = reconfigure (protocol);
+					Task finished = await Task.WhenAny (attemptTask, Task.Delay (RECONNECT_ATTEMPT_WATCHDOG, stopToken)).ConfigureAwait (false);
+					if (!ReferenceEquals (finished, attemptTask))
+						{
+						_ = attemptTask.ContinueWith (t => _ = t.Exception, CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+						LogDiagnostic ($"Reconnect attempt {attempt} did not finish within {RECONNECT_ATTEMPT_WATCHDOG.TotalSeconds:0} seconds; moving on.");
+						continue;
+						}
+					await attemptTask.ConfigureAwait (false);
 					if (protocol.IsConnected)
 						{
 						LogDiagnostic ($"Reconnected successfully (attempt {attempt}).");

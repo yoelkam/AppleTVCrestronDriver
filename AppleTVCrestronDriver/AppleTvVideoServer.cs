@@ -307,10 +307,15 @@ public sealed class AppleTvVideoServer : ABasicVideoServer, ICloudConnected, ISe
 	// that gives up rather than retrying forever once the device stays
 	// unreachable.
 	private async Task HandleCompanionDisconnectedAsync (IAppleTvProtocol protocol)
-		=> await _logic.HandleCompanionDisconnectedAsync (
+		{
+		var connectionLog = protocol as AppleTvVideoServerProtocol;
+		connectionLog?.LogConnectionEvent ("Reconnect requested.");
+		await _logic.HandleCompanionDisconnectedAsync (
 			protocol,
 			p => ConfigureAppleTvAsync (p, p.AppleTvName),
 			_reconnectStop.Token).ConfigureAwait (false);
+		connectionLog?.LogConnectionEvent ($"Reconnect handler finished ({(protocol.IsConnected ? "connected" : "not connected")}).");
+		}
 
 	private async Task ConfigureAppleTvAsync (IAppleTvProtocol protocol, string appleTvName)
 		=> await _logic.ConfigureAppleTvAsync (

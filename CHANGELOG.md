@@ -11,6 +11,11 @@ under the same version tag.
 
 This changelog records shipped features, fixes, compatibility and runtime dependency changes. See [development and validation history](DEVELOPMENT-HISTORY.md) for tests, CI, build tooling and work not yet released.
 
+## 1.6.3 (yoelkam fork) - 2026-11-20
+
+- Fix: a reconnect attempt could wait forever when the Apple TV accepted the TCP connection but never finished pair verification. Because only one reconnect loop runs at a time, the driver then ignored every later disconnect and the remote stayed dead until a manual re-pair (seen on 1.6.2 in the field; restarting the Apple TV did not help). Each connect attempt now times out after 30 s, and the reconnect loop moves on from any attempt that takes longer than 90 s.
+- Connection milestones (connecting, connected, connection lost and why, attempt failed/timed out, reconnect requested/finished) are now always written to the processor log as "[AppleTV] <name>: ...", independent of the Crestron Home logging toggle.
+
 ## 1.6.2 (yoelkam fork) - 2026-11-18
 
 - Fix: the Video Server stopped trying to reconnect about a minute after losing the Apple TV (5 attempts at 2/5/10/20/30 s), leaving that room's remote dead until a processor reboot or re-pair. It now keeps retrying every 60 seconds after the quick retries, until the Apple TV is back or the driver is reloaded.

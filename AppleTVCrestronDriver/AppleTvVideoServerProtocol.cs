@@ -46,6 +46,11 @@ internal sealed class AppleTvVideoServerProtocol : AVideoServerProtocol, IAppleT
 	private static readonly TimeSpan HEALTH_CHECK_TIMEOUT = TimeSpan.FromSeconds (10);
 	private static readonly TimeSpan COMMAND_TIMEOUT = TimeSpan.FromSeconds (10);
 	private static readonly TimeSpan SEND_QUEUE_TIMEOUT = TimeSpan.FromSeconds (20);
+
+	// 1.6.3: limit for one connect attempt (TCP + pair-verify + Companion API start). Without it an
+	// Apple TV that accepted TCP but never answered pair-verify left the attempt - and with it the
+	// whole reconnect loop - waiting forever, so the remote stayed dead until a manual re-pair.
+	private static readonly TimeSpan CONNECT_ATTEMPT_TIMEOUT = TimeSpan.FromSeconds (30);
 	private AppleTvCompanionSession _lostSession;
 	private readonly Dictionary<ArrowDirections, bool> _pressedArrowDirections = new ()
 		{
@@ -132,14 +137,33 @@ internal sealed class AppleTvVideoServerProtocol : AVideoServerProtocol, IAppleT
 			SetCompanionConnectionState (false);
 			}
 		await RetireSessionAsync (previous, previousKeys).ConfigureAwait (false);
-		AppleTvCompanionSession session = await AppleTvCompanionSession.ConnectAsync (
-			address,
-			port,
-			credentials,
-			stableIdentifier,
-			appleTvName,
-			_lifetimeCancellation.Token,
-			LogDiagnostic).ConfigureAwait (false);
+		LogConnectionEvent ($"Connecting to {address}:{port}.");
+		AppleTvCompanionSession session;
+		using (var attempt = CancellationTokenSource.CreateLinkedTokenSource (_lifetimeCancellation.Token))
+			{
+			attempt.CancelAfter (CONNECT_ATTEMPT_TIMEOUT);
+			try
+				{
+				session = await AppleTvCompanionSession.ConnectAsync (
+					address,
+					port,
+					credentials,
+					stableIdentifier,
+					appleTvName,
+					attempt.Token,
+					LogDiagnostic).ConfigureAwait (false);
+				}
+			catch (Exception exception) when (attempt.IsCancellationRequested && !_lifetimeCancellation.IsCancellationRequested)
+				{
+				LogConnectionEvent ($"Connect attempt timed out after {CONNECT_ATTEMPT_TIMEOUT.TotalSeconds:0} s ({exception.GetType ().Name}).");
+				throw new TimeoutException ($"The Apple TV did not complete the connection within {CONNECT_ATTEMPT_TIMEOUT.TotalSeconds:0} seconds.", exception);
+				}
+			catch (Exception exception) when (!_lifetimeCancellation.IsCancellationRequested)
+				{
+				LogConnectionEvent ($"Connect attempt failed: {exception.GetType ().Name}: {exception.Message}");
+				throw;
+				}
+			}
 		lock (_sessionLock)
 			{
 			if (_disposed || version != Volatile.Read (ref _connectionVersion) || !session.IsConnected)
@@ -177,6 +201,7 @@ internal sealed class AppleTvVideoServerProtocol : AVideoServerProtocol, IAppleT
 			SetPowerState (session.IsPoweredOn);
 			}
 
+		LogConnectionEvent ("Connected.");
 		_ = MonitorSessionHealthAsync (session);
 
 		// ConnectAsync's initial best-effort power snapshot does not raise
@@ -288,7 +313,7 @@ internal sealed class AppleTvVideoServerProtocol : AVideoServerProtocol, IAppleT
 			SetCompanionConnectionState (false);
 			}
 
-		LogDiagnostic ($"Apple TV connection lost ({reason}); reconnecting.");
+		LogConnectionEvent ($"Connection lost ({reason}); reconnecting.");
 		CompanionDisconnected?.Invoke ();
 		}
 
@@ -774,6 +799,26 @@ internal sealed class AppleTvVideoServerProtocol : AVideoServerProtocol, IAppleT
 		// builds, since it is not routed through Crestron Home and is not
 		// subject to EnableLogging, filtering, or delay/interleaving.
 		ErrorLog.Notice ($"[AppleTV] {message}");
+#endif
+		}
+
+	// Rare connection milestones (connecting, connected, lost, timed out) always go to the processor
+	// log, independent of the Crestron Home logging toggle, so field failures can be diagnosed after
+	// the fact (yoelkam fork 1.6.3). Volume is a few lines per outage.
+	internal void LogConnectionEvent (string message)
+		{
+		string name = string.IsNullOrWhiteSpace (AppleTvName) ? "Apple TV" : AppleTvName;
+#if DEBUG
+		LogDiagnostic (message);
+#else
+		LogDiagnostic (message);
+		try
+			{
+			ErrorLog.Notice ($"[AppleTV] {name}: {message}");
+			}
+		catch
+			{
+			}
 #endif
 		}
 
